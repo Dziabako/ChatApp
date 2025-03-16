@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <div class="message-box">
+        <h2>Chat Room: {{ code }}</h2>
+        <!-- In this div JS will insert all the messages in the chat -->
+        <div class="messages" id="messages"></div>
+
+        <div class="inputs">
+            <input type="text" rows="3" placeholder="Message" name="message" id="message">
+            <button type="submit" name="send" id="send-btn" onClick="sendMessage()">Send</button>
+        </div>
+    </div>
+    <script type="text/javascript">
+        // Connect to the websocket hosted on FLask app / emiting event to backend server called Connect
+        var socketio = io();
+
+        const messages = document.getElementById('messages');
+
+        // It shows when message was received not when was sended by the user
+        const createMessage = (name, msg) => {
+            const content = `
+                <div class="text">
+                    <span>
+                        <strong>${name}</strong>: ${msg}
+                    </span>
+                    <span class="muted">${new Date().toLocaleString()}</span>
+                </div>`
+
+        messages.innerHTML += content;
+        };
+
+        socketio.on("message", (data) => {
+            createMessage(data.name, data.message);
+        });
+
+        const sendMessage = () => {
+            const message = document.getElementById('message');
+            if (message.value == "") return;
+            socketio.emit("message", { data: message.value });
+            // Getting rid of the text in textbox
+            message.value = "";
+        }
+    </script>
+
+    <!-- Dynamically calling createMessage function to call it for every msg in dir -->
+    {% for msg in messages %}
+        <script type="text/javascript">
+            createMessage("{{ msg.name }}", "{{ msg.message }}");
+        </script>
+    {% endfor %}
+{% endblock %}
